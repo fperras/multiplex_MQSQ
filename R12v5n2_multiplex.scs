@@ -1,0 +1,100 @@
+;R12v5n2_multiplex.scs
+
+;proton MQ correlation experiment using R12^5_2:
+;Experiment is run as a pseudo-3D experiment to enable the separation of MQ/SQ
+;spectra through multiplex processing;
+;Data needs to be processed using the multiplex_processing.exe program
+
+;S. Chandra Shekar and Frederic Alain Perras, 11/15/2022
+
+;$COMMENT=SQ-MQ experiment with multiplex
+;$CLASS=Solids
+;$DIM=3D
+;$TYPE=direct excitation
+;$SUBTYPE=homonuclear correlation
+;$OWNER=fperras
+
+;cnst31 : spinning frequency in Hz (vR)
+;p18 : recoupling pulse width (180dgr) at pl18
+;pl18: SR12 power (3*vR)
+
+;l1 : number of SR12 recoupling cycles
+;l8 : maximum desired |MQ| order
+;l9 : set TD2 to this value
+;110 : phase incrementation (calculated)
+
+;p1 : 90 excitation pulse at pl1
+;pl1 : power level for excitation pulse p1
+;d1 : recycle delay
+;d5 : z-filter delay
+
+;FnMode: QF(F2) QF(F1)
+
+define delay tau
+"tau=0.5s/cnst31-p1*2"
+"d0=0"                                 ;t1 evlutn of MQC (|M|=2,3,4, ...)
+
+;cnst11 : to adjust t=0 for acquisition, if digmod = baseopt
+"acqt0=1u*cnst11"
+
+"in0=inf1"                          
+aqseq 321
+
+"p18=1s/(cnst31*6)"
+
+"l9 = 2*l8+1"                            
+"l10= 65536/l9"
+
+  ze
+1 30u
+;  30u
+;   30u
+     d1
+     30u pl18:f1
+
+2      p18 ph0
+       p18 ph1
+      lo to 2 times 6
+3      p18 ph1
+       p18 ph0
+      lo to 3 times 6
+     lo to 2 times l1
+
+     d0                                ;t1 evlutn of MQC (|M|=2,3,4, ...)
+
+4      p18 ph2
+       p18 ph3
+      lo to 4 times 6
+5      p18 ph3
+       p18 ph2
+      lo to 5 times 6
+     lo to 4 times l1
+
+     d5                                ;z-filter
+     (p1 pl1 ph30):f1
+    go=1 ph31
+    10m wr #0 if #0 zd
+
+6    30u ip0
+     30u ip1
+    lo to 6 times l10
+   lo to 1 times l9
+   30u rp0
+   30u rp1
+
+   9m  id0                             ;increment d0 by in0
+  lo to 1 times td1
+  rd0
+exit
+
+;ph0= (24)  5
+;ph1= (24) 19
+
+ph0 = (65536)  13653
+ph1 = (65536)  51882
+ph2 = (65536)  51882
+ph3 = (65536)  13653
+
+ph30= 0
+ph31= ph30
+
